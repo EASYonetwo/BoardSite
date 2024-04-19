@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.min.edu.model.FreeBoardDaoImpl">
+	<resultMap type="com.min.edu.dto.FreeBoardDto" id="FreeBoardDtoMap">
+		<result column="SEQ" property="seq"/>
+		<result column="ID" property="id"/>
+		<result column="TITLE" property="title"/>
+		<result column="CONTENT" property="content"/>
+		<result column="DELFLAG" property="delflag"/>
+		<result column="REGDATE" property="regdate"/>
+		<collection property="filedto" resultMap="FileDto"/>
+	</resultMap>
+	<resultMap type="com.min.edu.dto.FileDto" id="FileDto">
+		<result column="FSEQ" property="fseq"/>
+		<result column="BOARDSEQ" property="boardseq"/>
+		<result column="FILENAME" property="filename"/>
+		<result column="FILESIZE" property="filesize"/>
+		<result column="FREGDATE" property="fregdate"/>
+		<result column="ENABLED" property="enabled"/>
+	</resultMap>
+<!-- 	전체조회           getAllFB -->
+	<select id="getAllFB" parameterType="java.util.Map" resultType="FreeBoardDto">
+		<![CDATA[
+			SELECT SEQ, ID, TITLE|| '(' || CNT || ')' AS TITLE, REGDATE, DELFLAG
+		        FROM (SELECT SEQ, ID, TITLE,
+		                (SELECT COUNT(*) FROM PROJECTFILE p2 
+		                        WHERE P.SEQ = P2.BOARDSEQ AND P2.ENABLED = 'Y') AS CNT, REGDATE, DELFLAG,
+		                        ROW_NUMBER() OVER(ORDER BY REGDATE DESC) AS RN
+		                FROM PROJECTFILEBOARD p)
+		        WHERE RN BETWEEN #{first} AND #{last}
+		]]>
+	</select>
+<!-- 	상세조회           getOneFB -->
+	<select id="getOneFB" parameterType="java.lang.String" resultMap="FreeBoardDtoMap">
+		SELECT P.SEQ AS SEQ, ID, TITLE, CONTENT, P.REGDATE AS REGDATE, FILENAME, FILESIZE, P2.SEQ AS FSEQ, P2.BOARDSEQ, ENABLED
+	        FROM PROJECTFILEBOARD p JOIN PROJECTFILE p2 
+	        ON P.SEQ = P2.BOARDSEQ
+	        AND P.SEQ=#{seq}
+	        AND DELFLAG ='N'
+	</select>
+<!-- 상세조회(파일이 없을때 글의 내용만 가져옴) getOneFBPost -->
+	<select id="getOneFBPost" parameterType="java.lang.String" resultType="FreeBoardDto">
+		SELECT P.SEQ, ID, TITLE, CONTENT, P.REGDATE
+			FROM PROJECTFILEBOARD p
+			WHERE SEQ = #{seq} AND DELFLAG = 'N'
+	</select>
+<!-- 	글작성             insertFBPost -->
+	<insert id="insertFBPost" parameterType="java.util.Map">
+		<selectKey keyProperty="seq" resultType="java.lang.Integer" order="BEFORE">
+			SELECT PROJECTFILEBOARD_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO PROJECTFILEBOARD(SEQ, ID, TITLE, 
+                                     CONTENT, REGDATE, DELFLAG)
+        VALUES (#{seq}, #{id},#{title},
+                #{content}, SYSDATE, 'N')
+	</insert>
+<!-- 	파일작성           insertFBFile -->
+	<insert id="insertFBFile" parameterType="java.util.Map">
+		<selectKey keyProperty="seq" resultType="java.lang.Integer" order="BEFORE">
+			SELECT PROJECTFILE_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO PROJECTFILE(SEQ,BOARDSEQ,FILENAME,
+                                FILESIZE,REGDATE,ENABLED)
+        VALUES (#{seq},PROJECTFILEBOARD_SEQ.CURRVAL,#{filename},
+                #{filesize},SYSDATE, 'Y')
+	</insert>
+<!-- 	글수정             updatePost -->
+	<update id="updatePost" parameterType="java.util.Map">
+		UPDATE PROJECTFILEBOARD SET CONTENT = #{content}
+       		WHERE SEQ = #{seq}
+	</update>
+<!-- 	파일삭제           deleteFile -->
+	<delete id="deleteFile" parameterType="java.lang.String">
+		UPDATE PROJECTFILE SET ENABLED = 'N'
+      		WHERE SEQ = #{seq}
+	</delete>
+<!-- 	글삭제             deletePostBoth -->
+	<delete id="deletePostBoth" parameterType="java.lang.String">
+		UPDATE PROJECTFILEBOARD SET DELFLAG = 'Y'
+       		WHERE SEQ = #{seq}
+	</delete>
+<!-- 	글 삭제시 파일삭제 deleteFileBoth  -->
+	<delete id="deleteFileBoth" parameterType="java.lang.String">
+		UPDATE PROJECTFILE SET ENABLED = 'N'
+        	WHERE BOARDSEQ = #{boardseq}
+	</delete>
+<!--    파일다운로드       getFile -->
+	<select id="getFile" parameterType="java.lang.String" resultType="FileDto">
+		SELECT SEQ, BOARDSEQ, FILENAME , FILESIZE ,REGDATE
+	        FROM PROJECTFILE p
+	        WHERE SEQ = #{seq} AND ENABLED = 'Y'
+	</select>
+<!-- 	페이징 -->
+	<select id="countBoard" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+			FROM PROJECTFILEBOARD
+	</select>
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.min.edu.model.PersonalBoardDaoImpl">
+<!-- 전체조회_사용자   selectAllPBUser -->
+<select id="selectAllPBUser" parameterType="java.lang.String" resultType="PersonalBoardDto">
+	SELECT SEQ, ID, TITLE, CONTENT, REGDATE, ADMINREPLY, REPLY
+        FROM PROJECTBOARD p
+        WHERE ID=#{id} AND DELFLAG ='N'
+        ORDER BY REGDATE DESC
+</select>
+<!-- 전체조회_관리자   selectAllPBAdmin -->
+<select id="selectAllPBAdmin" resultType="PersonalBoardDto">
+	SELECT SEQ, ID, TITLE, CONTENT,ADMINREPLY , REPLY, DELFLAG ,REGDATE 
+        FROM PROJECTBOARD p
+        ORDER BY REGDATE DESC
+</select>
+<!-- 상세조회_사용자   selectOnePBUser -->
+<select id="selectOnePBUser" parameterType="java.lang.String" resultType="PersonalBoardDto">
+	SELECT SEQ, ID, TITLE, CONTENT, REGDATE, ADMINREPLY, REPLY
+        FROM PROJECTBOARD p
+        WHERE SEQ=#{seq}
+</select>
+<!-- 상세조회_관리자   selectOnePBAdmin -->
+<select id="selectOnePBAdmin" parameterType="java.lang.String" resultType="PersonalBoardDto">
+	SELECT SEQ, ID, TITLE, CONTENT, REPLY, DELFLAG ,REGDATE, ADMINREPLY
+        FROM PROJECTBOARD p
+        WHERE SEQ=#{seq}
+</select>
+<!-- 글작성          insertPB -->
+<insert id="insertPB" parameterType="java.util.Map">
+	<selectKey keyProperty="seq" resultType="java.lang.Integer" order="BEFORE">
+		SELECT PROJECTBOARD_SEQ.NEXTVAL AS SEQ FROM DUAL
+	</selectKey>
+	INSERT INTO PROJECTBOARD(SEQ,ID,TITLE,CONTENT,
+                             REPLY,DELFLAG,REGDATE)
+        VALUES (#{seq}, #{id}, #{title}, #{content},
+                        'N', 'N', SYSDATE)
+</insert>
+<!-- 글수정          updatePB -->
+<update id="updatePB" parameterType="java.util.Map">
+	UPDATE PROJECTBOARD SET CONTENT=#{content}
+        WHERE SEQ=#{seq}
+</update>
+<!-- 글삭제(다중삭제)  deletePB -->
+<update id="deletePB" parameterType="java.lang.String">
+	UPDATE PROJECTBOARD SET DELFLAG ='Y'
+        WHERE SEQ=#{seq}
+</update>
+<!-- 댓글입력_관리자   insertReply -->
+<insert id="insertReply" parameterType="java.util.Map">
+	UPDATE PROJECTBOARD SET ADMINREPLY = #{adminreply}, REPLY = 'Y'
+        WHERE SEQ=#{seq}
+</insert>
+<!-- 댓글수정_관리자   updateReply -->
+<update id="updateReply" parameterType="java.util.Map">
+	UPDATE PROJECTBOARD SET ADMINREPLY = #{adminreply}
+        WHERE SEQ=#{seq}
+</update>
+<!-- 댓글삭제_관리자   deleteReply -->
+<update id="deleteReply" parameterType="java.lang.String">
+	UPDATE PROJECTBOARD SET ADMINREPLY = '', REPLY = 'N'
+        WHERE SEQ=#{seq}
+</update>
+</mapper>

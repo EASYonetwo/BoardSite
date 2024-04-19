@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.min.edu.model.UserDaoImpl">
+	<!-- 회원가입 insertUser -->
+	<insert id="insertUser" parameterType="UserDto">
+		INSERT INTO PROJECTUSER(ID, PASSWORD, NAME, 
+                        ADDRESS, PHONE, JOINDATE, 
+                        AUTH, ENABLED)
+        VALUES (#{id},#{password}, #{name},
+                #{address},#{phone}, SYSDATE,
+                'U','Y')
+	</insert>
+	<!-- 로그인 getLogin -->
+	<select id="getLogin" parameterType="java.util.Map" resultType="UserDto">
+		SELECT ID, NAME, ADDRESS, PHONE, AUTH, ENABLED
+	        FROM PROJECTUSER p
+	        WHERE ID=#{id} AND PASSWORD=#{password}
+	        AND ENABLED = 'Y'
+	</select>
+	<!-- 아이디 찾기 getFindId -->
+	<select id="getFindId" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT ID
+	        FROM PROJECTUSER p
+	        WHERE NAME=#{name} AND PHONE=#{phone}
+	</select>
+	<!-- 비밀번호 찾기 getFindPassword -->
+	<select id="getFindPassword" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT PASSWORD
+	        FROM PROJECTUSER p
+	        WHERE ID=#{id} AND NAME=#{name} AND PHONE=#{phone}
+	</select>
+	<!-- 사용자 전체 조회 getAllUser -->
+	<select id="getAllUser" resultType="UserDto">
+		SELECT ID, NAME, ADDRESS, PHONE, JOINDATE , AUTH, ENABLED
+        	FROM PROJECTUSER p
+        	ORDER BY JOINDATE
+	</select>
+	<!-- 사용자 상세 조회 getOneUser -->
+	<select id="getOneUser" parameterType="java.lang.String" resultType="UserDto">
+		SELECT ID, NAME, ADDRESS, PHONE, JOINDATE , AUTH, ENABLED
+	        FROM PROJECTUSER p
+	        WHERE ID=#{id}
+	</select>
+	<!-- 사용자 권한 수정 updateUserAuth -->
+	<update id="updateUserAuth" parameterType="java.lang.String">
+		UPDATE PROJECTUSER SET AUTH='A'
+        	WHERE ID=#{id}
+	</update>
+	<!-- 사용자 정보 수정 updateUserInfo -->
+	<update id="updateUserInfo" parameterType="java.util.Map">
+		UPDATE PROJECTUSER SET NAME=#{name} , ADDRESS=#{address}, PHONE =#{phone}
+        	WHERE ID=#{id}
+	</update>
+	<!-- 사용자 탈퇴 deleteUser -->
+	<update id="deleteUser" parameterType="java.lang.String">
+		UPDATE PROJECTUSER SET ENABLED='N'
+        	WHERE ID=#{id}
+	</update>
+	<!-- 사용자 다중삭제 multiDeleteUser -->
+	<update id="multiDeleteUser" parameterType="java.util.List">
+		UPDATE PROJECTUSER SET ENABLED='N'
+        	WHERE ID IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+        	#{id}
+        </foreach>
+	</update>
+	<!-- 아이디 중복검사 joinIdCheck -->
+	<select id="joinIdCheck" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT COUNT(*) 
+        FROM PROJECTUSER p
+        WHERE ID = #{id}
+	</select>
+</mapper>
